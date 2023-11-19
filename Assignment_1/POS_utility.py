@@ -11,22 +11,19 @@ from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Masking, Concate
 def exclude_symbols(s):
     return not all(i in string.punctuation for i in s)
 
-
-def embedding_for_vocab(filepath, word_index, embedding_dim): 
-    vocab_size = len(word_index) + 1
-    embedding_matrix_vocab = np.zeros((vocab_size, embedding_dim)) 
-    with open(filepath, encoding="utf8") as f: 
-        for line in f: 
-            word, *vector = line.split() 
-            if word in word_index: 
-                idx = word_index[word] 
-                embedding_matrix_vocab[idx] = np.array( 
-                    vector, dtype=np.float32)[:embedding_dim] 
-    f.close()
-    return embedding_matrix_vocab 
-  
     
 def build_base_model(LSTM_nodes, classes, model_name="nlp_model", additional_layers=[], return_seq=False):
+    """
+    Returns a baseline model, with the option to add more layers between the two default ones.
+    
+    Arguments: {LSTM_nodes: int, the number of nodes of the base LSTM;
+                classes: int, the number of nodes of the classifier;
+                model_name: str (optional), used as the model's name, defaults to 'nlp_model';
+                additional_layers: list of keras.layers (optional), list of additional layers to be added to the model, defaults to [];
+                return_seq: bool (optional), set this to True if the first additional layer needs sequences as inputs, defaults to False otherwise.}
+                
+    Returns: Compiled keras.Sequential model.
+    """
     model = keras.Sequential(name=model_name)
     model.add(Input(shape=(100,1)))
     model.add(Bidirectional(LSTM(LSTM_nodes, return_sequences=return_seq)))
@@ -38,6 +35,17 @@ def build_base_model(LSTM_nodes, classes, model_name="nlp_model", additional_lay
 
 
 def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_layers=[], return_seq=True):
+    """
+    Returns a baseline model working with sentences instead of single words, with the option to add more layers between the two default ones.
+    
+    Arguments: {LSTM_nodes: int, the number of nodes of the base LSTM;
+                classes: int, the number of nodes of the classifier;
+                model_name: str (optional), used as the model's name, defaults to 'nlp_model';
+                additional_layers: list of keras.layers (optional), list of additional layers to be added to the model, defaults to [];
+                return_seq: bool (optional), set this to False if the first additional layer does not need sequences as inputs, defaults to True otherwise.}
+                
+    Returns: Compiled keras.Sequential model.
+    """
     model = keras.Sequential(name=model_name)
     model.add(Input(shape=(None,100)))
     model.add(Masking(mask_value=0.))
@@ -51,11 +59,18 @@ def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_laye
     return model
 
 
-def plot_averages(history):
+def plot_averages(histories):
+    """
+    Plots two graphs of multiple training runs, one for Training accuracy and one for Validation accuracy, displaying the average as well as the single runs.
+    
+    Arguments: {histories: list of tf.keras.callbacks.History.history, one for each training run.}
+    
+    Returns: None
+    """
     tmp = []
     tmp_val = []
     fig, ax = plt.subplots(1,2,figsize=(16,6))
-    for h in history:
+    for h in histories:
         tmp.append(h['accuracy'])
         tmp_val.append(h['val_accuracy'])
     ax[0].plot(np.mean(tmp, axis=0), color="#11aa00")
@@ -74,20 +89,48 @@ def plot_averages(history):
     plt.show()
     
     
-def plot_single_runs(history):
-    fig, ax = plt.subplots(1,len(history),figsize=(len(history)*6,5))
-    for x in range(len(history)):
-        ax[x].plot(history[x]['accuracy'])
-        ax[x].plot(history[x]['val_accuracy'])
+def plot_single_runs(histories):
+    """
+    Plots graphs of multiple training runs with both Training and Validation accuracy, displaying one graph per run.
+    
+    Arguments: {histories: list of tf.keras.callbacks.History.history, one for each training run.}
+    
+    Returns: None
+    """
+    fig, ax = plt.subplots(1,len(histories),figsize=(len(histories)*6,5))
+    for x in range(len(histories)):
+        ax[x].plot(histories[x]['accuracy'])
+        ax[x].plot(histories[x]['val_accuracy'])
         ax[x].set_ylabel('accuracy')
         ax[x].set_xlabel('epoch')
         ax[x].legend(['train', 'val'], loc='upper left')
     plt.show()
     
+
+def evaluate_model(model, checkpoint_path, test_X, test_y, metric, runs=1, sequences=False):
+    scores = []
+    for r in range(runs):
+        model.load_weights(checkpoint_path.joinpath(str(r)))
+        print("Testing model n."+str(r+1))
+        y_scores = model.predict(test_X, verbose=2)
+        y_pred = np.argmax(y_scores, axis=len(y_scores.shape)-1)
+        scores.append(metric(y_pred, test_y, sequences=sequences))
+    return scores
+    
     
 def errors_summary(scores_dicts, encoder, train_y, test_y):
+    """
+    Builds a pandas.DataFrame containing each class with a low (<0.5) F1 score, including how many times it appeared in both Training and Test set. 
+    
+    Arguments: {scores_dicts: list of dictionaries with required key "Scores", containing F1 scores for each class of the task (output of the 'evaluate_model' function);
+                encoder: instance of sklearn.preprocessing.LabelEncoder used to encode the classes;
+                train_y: numpy.array of int, Training labels used to train the model
+                test_y: numpy.array of int, Test labels used to evaluate the model}
+                
+    Returns: pandas.Dataframe
+    """
     low_scores = dict((x,y) for x,y in scores_dicts[0]["Scores"].items() if y < 0.5)
-    low_classes = encoder.inverse_transform(list(low_scores.keys()))
+    low_classes = encoder.inverse_transform([int(i) for i in low_scores.keys()])
     train_y = encoder.inverse_transform(train_y)
     test_y = encoder.inverse_transform(test_y)
     low_train = pd.Series(train_y).value_counts().reindex(
@@ -100,21 +143,17 @@ def errors_summary(scores_dicts, encoder, train_y, test_y):
     return low_df
 
 
-def evaluate_model(model, checkpoint_path, test_X, test_y, metric, runs=1):
-    scores = []
-    for r in range(runs):
-        model.load_weights(checkpoint_path.joinpath(str(r)))
-        print("Testing model n."+str(r+1))
-        y_pred = np.argmax(model.predict(test_X, verbose=2),axis=1)
-        scores.append(metric(y_pred, test_y))
-    return scores
-
-
 def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, batch_size=64, seeds=[]):
     """
-    Input arguments: model: compiled Keras model, ckp_path: Path to a file
+    Trains a model any number of times and resets its weights afterwards, applying a random restart with given seeds. No seeds in input will only do 1 training cycle with a random integer as seed. The weights of the best models for each iteration will be saved to a file. 
     
-    Trains a model 3+ times restarting with fixed random seeds, and resets its weights afterwards.
+    Arguments: {model: compiled Keras model, whose weights will not change at the end of execution;
+                ckp_path: path to a file, to which a suffix will be added to distinguish different runs;
+                Train_X, Train_Y, Val_X, Val_Y: input data for model.fit();
+                batch_size: int (optional), defaults to 64;
+                seeds: list of int (optional), each representing a different training run}
+                
+    Returns: list of tf.keras.callbacks.History.history
     """
     histories = []
     if not seeds:
@@ -144,23 +183,23 @@ def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, batch_
         model.set_weights(reset)
     return histories
 
-def pad_sentences(sentences, embedding_dim, cat):
+def pad_sentences(sentences, embedding_dim):
     """
-    Function to convert a Pandas Series of uneven sentences into a Numpy array of fixed-size padded sentences.
+    Converts a pandas.Series of uneven sentences into a Numpy array of fixed-size padded sentences.
     
-    Inputs: sentences: Pandas Series, cat: string
+    Arguments: {sentences: pandas.Series containing numpy.Array of uneven size, to be padded;
+                embedding_dim: int, the length of an embedded word in the sentence}
+                
+    Returns: 3-dimensional numpy.Array
     """
     from warnings import simplefilter
     simplefilter(action='ignore', category=FutureWarning)
     
-    samples = 100
-    if cat != 'train':
-        samples = int(samples/2)
-    
+    samples = len(sentences)
     X2 = sentences.to_numpy()
     X2 = np.column_stack((itertools.zip_longest(*X2, fillvalue=np.zeros(embedding_dim))))
     X2 = np.stack(X2).reshape(
         (samples, int(X2.shape[1]/embedding_dim), embedding_dim)).astype(float)
-    print(f"Final Shape for {cat}:")
+    print("Final Shape (sentences, sentence length, embedding dimensions):")
     print(X2.shape)
     return X2
