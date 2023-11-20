@@ -197,7 +197,7 @@ def pad_sentences(sentences, embedding_dim):
     
     samples = len(sentences)
     X2 = sentences.to_numpy()
-    X2 = np.column_stack((itertools.zip_longest(*X2, fillvalue=np.zeros(embedding_dim))))
+    X2 = np.column_stack((list(itertools.zip_longest(*X2, fillvalue=np.zeros(embedding_dim)))))
     X2 = np.stack(X2).reshape(
         (samples, int(X2.shape[1]/embedding_dim), embedding_dim)).astype(float)
     print("Final Shape (sentences, sentence length, embedding dimensions):")
