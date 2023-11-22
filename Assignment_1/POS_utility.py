@@ -5,7 +5,7 @@ import random
 import itertools
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Masking, Concatenate, Input
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Masking, Concatenate, Input, TimeDistributed
 
 
 def exclude_symbols(s):
@@ -34,7 +34,7 @@ def build_base_model(LSTM_nodes, classes, model_name="nlp_model", additional_lay
     return model
 
 
-def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_layers=[], return_seq=True):
+def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_layers=[]):
     """
     Returns a baseline model working with sentences instead of single words, with the option to add more layers between the two default ones.
     
@@ -49,9 +49,9 @@ def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_laye
     model = keras.Sequential(name=model_name)
     model.add(Input(shape=(None,100)))
     model.add(Masking(mask_value=0.))
-    from keras.layers import TimeDistributed
     # Ignores padding tokens
-    model.add(Bidirectional(LSTM(LSTM_nodes, return_sequences=return_seq)))
+    
+    model.add(Bidirectional(LSTM(LSTM_nodes, return_sequences=True)))
     for layer in additional_layers:
         model.add(layer)
     model.add(TimeDistributed(Dense(classes, activation='softmax')))
