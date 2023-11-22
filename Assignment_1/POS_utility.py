@@ -73,8 +73,11 @@ def plot_averages(histories):
     for h in histories:
         tmp.append(h['accuracy'])
         tmp_val.append(h['val_accuracy'])
-    ax[0].plot(np.mean(tmp, axis=0), color="#11aa00")
-    ax[1].plot(np.mean(tmp_val, axis=0), color="#ffa520")
+    avg_tmp = np.mean(tmp, axis=0)
+    avg_tmp_val = np.mean(tmp_val, axis=0)
+    
+    ax[0].plot(avg_tmp, color="#11aa00")
+    ax[1].plot(avg_tmp_val, color="#ffa520")
     for h in tmp:
         ax[0].plot(h, color="#11aa0055")
     for h in tmp_val:
@@ -82,10 +85,13 @@ def plot_averages(histories):
     # plt.plot(np.mean(tmp_val, axis=0))
     ax[0].set_title("Training set")
     ax[1].set_title("Validation set")
+    
     for idx in range(2):
         ax[idx].set_ylabel('avg_accuracy')
         ax[idx].set_xlabel('epoch')
         ax[idx].legend(['average', 'iterations'], loc='upper left')
+    ax[0].text(len(avg_tmp)-0.5, avg_tmp[-1], str(avg_tmp[-1]*100)[0:4]+"%", fontsize=12, fontweight=600)
+    ax[1].text(len(avg_tmp_val)-0.5, avg_tmp_val[-1], str(avg_tmp_val[-1]*100)[0:4]+"%", fontsize=12, fontweight=600)
     plt.show()
     
     
