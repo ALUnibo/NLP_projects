@@ -135,7 +135,7 @@ def errors_summary(scores_dicts, encoder, train_y, test_y):
                 
     Returns: pandas.Dataframe
     """
-    low_scores = dict((x,y) for x,y in scores_dicts[0]["Scores"].items() if y < 0.5)
+    low_scores = dict((x,y) for x,y in scores_dicts[0]["Scores"].items() if y < 0.75)
     low_classes = encoder.inverse_transform([int(i) for i in low_scores.keys()])
     train_y = encoder.inverse_transform(train_y)
     test_y = encoder.inverse_transform(test_y)
@@ -149,7 +149,7 @@ def errors_summary(scores_dicts, encoder, train_y, test_y):
     return low_df
 
 
-def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, batch_size=64, seeds=[]):
+def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, seeds=[], **kwargs):
     """
     Trains a model any number of times and resets its weights afterwards, applying a random restart with given seeds. No seeds in input will only do 1 training cycle with a random integer as seed. The weights of the best models for each iteration will be saved to a file. 
     
@@ -179,12 +179,12 @@ def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, batch_
             monitor='val_loss',
             mode='min',
             min_delta=0.001,
-            patience=2,
+            patience=3,
             verbose=1
         )
 
-        history = model.fit(Train_X, Train_Y, batch_size=batch_size, epochs=10, validation_data=(Val_X, Val_Y),
-                        callbacks=[checkpoint_callback, early_stop_callback], verbose=1)
+        history = model.fit(Train_X, Train_Y, validation_data=(Val_X, Val_Y), verbose=1,
+                        callbacks=[checkpoint_callback, early_stop_callback], **kwargs)
         histories.append(history.history)
         model.set_weights(reset)
     return histories
