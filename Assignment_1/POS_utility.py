@@ -4,6 +4,7 @@ import pandas as pd
 import random
 import itertools
 import tensorflow as tf
+from colour import Color
 from tensorflow import keras
 from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Masking, Concatenate, Input, TimeDistributed
 
@@ -57,6 +58,39 @@ def build_seq_model(LSTM_nodes, classes, model_name="nlp_model", additional_laye
     model.add(TimeDistributed(Dense(classes, activation='softmax')))
     model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
+
+
+def plot_unbalanced_series(data, zoom):
+    """
+    Plots two histograms on two separate rows, the second one being zoomed in according to user preference.
+    Intended to plot an ordered series of values that would fit badly on a single hist plot.
+    
+    Arguments: {data: pandas.DataFrame with attribute 'count';
+                zoom: int, amount to zoom in the second graph}
+                
+    Returns: None
+    """
+    labels = data.index
+    sizes = data['count']
+    split = int(len(labels)/2)
+    ylim = round(sizes[0], -(len(str(sizes[0]))-2) )
+    print(ylim, sizes[0])
+    if ylim < sizes[0]:
+        ylim += 10**(len(str(sizes[0]))-2)
+    print(ylim)
+
+    red = Color("green")
+    colors = list(red.range_to(Color("gray"),len(labels)))
+    colors = [color.rgb for color in colors]
+
+    fig, ax = plt.subplots(2, 1, figsize=(10,10))
+    ax[0].bar(labels[:split], sizes[:split], color=colors[:split])
+    ax[0].set_ylim(0,ylim)
+    ax[0].set_title("First half of POS distribution, normal scale")
+    ax[1].bar(labels[split:], sizes[split:], color=colors[split:])
+    ax[1].set_ylim(0,ylim/zoom)
+    ax[1].set_title(f"Second half of POS distribution, zoomed in {zoom}x")
+    plt.show()
 
 
 def plot_averages(histories):
@@ -188,6 +222,7 @@ def impermanent_training(model, ckp_path, Train_X, Train_Y, Val_X, Val_Y, seeds=
         histories.append(history.history)
         model.set_weights(reset)
     return histories
+
 
 def pad_sentences(sentences, embedding_dim):
     """
