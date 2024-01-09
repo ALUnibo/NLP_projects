@@ -5,7 +5,7 @@ from CustomDataset import CustomDataset
 from torch.utils.data import DataLoader
 from BertClassifier import BertClassifierC, BertClassifierCP, BertClassifierCPS
 from network_trainer import train
-from models_generator import random_uniform_classifier, majority_classifier
+from baselines import random_uniform_classifier, majority_classifier
 
 
 model_id = 0
@@ -33,14 +33,14 @@ if __name__ == '__main__':
     training_loader = DataLoader(training_set, batch_size=16, shuffle=True)
     validation_loader = DataLoader(validation_set, batch_size=16, shuffle=False)
 
-    # model = BertClassifierC(**models_dict[model_id])
+    model = BertClassifierC(**models_dict[model_id])
     # model = BertClassifierCP(**models_dict[model_id])
-    model = BertClassifierCPS(**models_dict[model_id])
+    # model = BertClassifierCPS(**models_dict[model_id])
     train(model, training_loader, validation_loader, 5)
 
     # Baselines
     # 1. Random
-    # labels_random = random_uniform_classifier(validation_set)
+    # labels_random = random_uniform_classifier(third_level_test_dataframe)
 
     # 2. Majority
 

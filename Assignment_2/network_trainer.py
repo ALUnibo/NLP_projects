@@ -23,12 +23,12 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
     lr_scheduler = get_lr_scheduler(optimizer, len(train_dataloader) * num_epochs)
 
     # Define your execution device
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print('The model will be running on', device, 'device')
     # Convert model parameters and buffers to CPU or Cuda
     model = model.to(device)
 
-    evaluate(model, validation_dataloader)
+    evaluate(model, validation_dataloader, device)
 
     for epoch in range(num_epochs):  # loop over the dataset multiple times
         model.train(True)
@@ -56,7 +56,7 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
             i += 1
 
         # evaluate the model on the validation set
-        score = evaluate(model, validation_dataloader)
+        score = evaluate(model, validation_dataloader, device)
 
         # we want to save the model if the accuracy is the best
         # if accuracy > best_accuracy:
@@ -74,19 +74,25 @@ def f1_score(predictions, targets, verbose=False):
     return single_class_scores
 
 
-def evaluate(model, validation_dataloader):
+def evaluate(model, validation_dataloader, device):
     model.eval()
+    outputs = torch.Tensor().to(device)
+    labels = torch.Tensor().to(device)
 
     with torch.no_grad():
         vloss = 0.0
-        for features, labels in validation_dataloader:
-            outputs = model(features)
-            outputs = torch.sigmoid(outputs)
-            vloss += get_loss_function()(outputs, labels).item()
+        for features_i, labels_i in validation_dataloader:
+            outputs_i = model(features_i)
+            outputs_i = torch.sigmoid(outputs_i)
+
+            outputs = torch.cat((outputs, outputs_i), 0)
+            labels = torch.cat((labels, labels_i), 0)
+
+            vloss += get_loss_function()(outputs_i, labels_i).item()
         vloss /= len(validation_dataloader)
         print('Validation loss: %.3f' % vloss)
 
-    all_thresholds = torch.arange(0.5, 0.8, 0.05)
+    all_thresholds = torch.arange(0.3, 0.8, 0.05)
     all_f1_scores = torch.zeros(len(all_thresholds))
     best_f1_score = float('-inf')
 
