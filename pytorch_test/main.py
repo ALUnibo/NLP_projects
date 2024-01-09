@@ -92,8 +92,8 @@ if __name__ == '__main__':
     training_set = CustomDataset(train_dataframe, third_level_train_dataframe, tokenizer)
     validation_set = CustomDataset(validation_dataframe, third_level_validation_dataframe, tokenizer)
 
-    c_dl_train = DataLoader(training_set, batch_size=32, shuffle=True)
+    c_dl_train = DataLoader(training_set, batch_size=8, shuffle=True)
     c_dl_validation = DataLoader(validation_set, batch_size=len(validation_set), shuffle=True)
 
     model = BertClassifier(4)
-    train(model, c_dl_train, c_dl_validation, 10)
+    train(model, c_dl_train, c_dl_validation, 100)
