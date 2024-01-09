@@ -10,16 +10,16 @@ class CustomDataset(Dataset):
         # features = tokenizer(features['Conclusion'].values.tolist(), padding=True, return_tensors='pt')
         conclusion_features = tokenizer(features['Conclusion'].values.tolist(), padding=True, return_tensors='pt')
         premise_features = tokenizer(features['Premise'].values.tolist(), padding=True, return_tensors='pt')
-        stance_features = features['Stance']
+        stance_features = torch.Tensor(features['Stance']).to(device)
         features = []
         conclusion_features['input_ids'] = conclusion_features['input_ids'].to(device)
         conclusion_features['attention_mask'] = conclusion_features['attention_mask'].to(device)
-        conclusion_features['token_type_ids'] = conclusion_features['token_type_ids'].to(device)
+        # conclusion_features['token_type_ids'] = conclusion_features['token_type_ids'].to(device)
         features.append(conclusion_features)
 
         premise_features['input_ids'] = premise_features['input_ids'].to(device)
         premise_features['attention_mask'] = premise_features['attention_mask'].to(device)
-        premise_features['token_type_ids'] = premise_features['token_type_ids'].to(device)
+        # premise_features['token_type_ids'] = premise_features['token_type_ids'].to(device)
         features.append(premise_features)
 
         labels = torch.Tensor(labels.values.tolist())
@@ -30,12 +30,15 @@ class CustomDataset(Dataset):
         self.labels = []
 
         for i in range(length):
-            elem = {'input_ids': conclusion_features['input_ids'][i], 'attention_mask': conclusion_features['attention_mask'][i],
-                    'token_type_ids': conclusion_features['token_type_ids'][i]}
-            self.features[0].append(elem)
             elem = {'input_ids': conclusion_features['input_ids'][i],
                     'attention_mask': conclusion_features['attention_mask'][i],
-                    'token_type_ids': conclusion_features['token_type_ids'][i]}
+                    # 'token_type_ids': conclusion_features['token_type_ids'][i]
+                    }
+            self.features[0].append(elem)
+            elem = {'input_ids': premise_features['input_ids'][i],
+                    'attention_mask': premise_features['attention_mask'][i],
+                    # 'token_type_ids': premise_features['token_type_ids'][i]
+                    }
             self.features[1].append(elem)
             elem = stance_features[i]
             self.features[2].append(elem)

@@ -12,6 +12,10 @@ def modify_stance(train_dataframe, validation_dataframe, test_dataframe):
     test_dataframe['Stance'].replace('against', 0, inplace=True)
     test_dataframe['Stance'].replace('in favor of', 1, inplace=True)
 
+    train_dataframe.drop(columns=['Argument ID'], inplace=True)
+    validation_dataframe.drop(columns=['Argument ID'], inplace=True)
+    test_dataframe.drop(columns=['Argument ID'], inplace=True)
+
 
 def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab_test_dataframe):
     oc_cols = ['thought', 'action', 'stimulation', 'hedonism']
