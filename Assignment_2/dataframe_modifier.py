@@ -13,7 +13,7 @@ def modify_stance(train_dataframe, validation_dataframe, test_dataframe):
     test_dataframe['Stance'].replace('in favor of', 1, inplace=True)
 
 
-def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab_test_dataframe, train_dataframe, validation_dataframe, test_dataframe):
+def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab_test_dataframe):
     oc_cols = ['thought', 'action', 'stimulation', 'hedonism']
     st_cols = ['humility', 'caring', 'dependability', 'concern', 'nature', 'tollerance', 'objectivity']
     se_cols = ['hedonism', 'achievement', 'dominance', 'resources', 'face']
@@ -41,16 +41,8 @@ def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab
         test_dataframe_reduce = lab_test_dataframe[funct(lab_test_dataframe, v)].apply(np.sum, axis=1) > 0
         third_level_test_dataframe[k] = test_dataframe_reduce.astype(np.float64)
 
-    training_set = train_dataframe.copy() # pd.merge(train_dataframe, third_level_train_dataframe)
-    training_set['labels'] = pd.Series(third_level_train_dataframe.drop(columns=['Argument ID']).values.tolist())
+    third_level_train_dataframe.drop(columns=['Argument ID'], inplace=True)
+    third_level_validation_dataframe.drop(columns=['Argument ID'], inplace=True)
+    third_level_test_dataframe.drop(columns=['Argument ID'], inplace=True)
 
-    validation_set = validation_dataframe.copy() # pd.merge(validation_dataframe, third_level_validation_dataframe)
-    validation_set['labels'] = pd.Series(third_level_validation_dataframe.drop(columns=['Argument ID']).values.tolist())
-
-    test_set = test_dataframe.copy() # pd.merge(test_dataframe, third_level_test_dataframe)
-    test_set['labels'] = pd.Series(third_level_test_dataframe.drop(columns=['Argument ID']).values.tolist())
-
-    training_set.drop(columns=['Argument ID'], inplace=True)
-    validation_set.drop(columns=['Argument ID'], inplace=True)
-    test_set.drop(columns=['Argument ID'], inplace=True)
-    return training_set, validation_set, test_set
+    return third_level_train_dataframe, third_level_validation_dataframe, third_level_test_dataframe
