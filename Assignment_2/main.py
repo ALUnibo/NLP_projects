@@ -15,7 +15,7 @@ import numpy as np
 model_id = 1
 models_dict = [{'name': 'bert-base-uncased', 'head_size': 768},
                {'name': 'roberta-base', 'head_size': 768},
-               ]
+               {'name': 'roberta-large', 'head_size': 1024}]
 seed = 43
 
 
@@ -33,7 +33,6 @@ if __name__ == '__main__':
         create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab_test_dataframe)
 
     tokenizer = AutoTokenizer.from_pretrained(models_dict[model_id]['name'])
-    # tokenizer.model_max_length = 512
 
     # Generate datasets
     training_set = CustomDataset(train_dataframe, third_level_train_dataframe, tokenizer)
@@ -47,13 +46,12 @@ if __name__ == '__main__':
     # model = ClassifierC(**models_dict[model_id])
     # model = ClassifierCP(**models_dict[model_id])
     model = ClassifierCPS(**models_dict[model_id])
-    # best_val_model, last_model = train(model, training_loader, validation_loader, 10, test_loader)
+    best_model = train(model, training_loader, validation_loader, 10)
+    torch.save(best_model.state_dict(), 'best_model.pt')
 
     # Test results
     print('Best model:')
-    # evaluate_model(best_val_model, test_loader, 'cuda')
-    print('Last model:')
-    # evaluate_model(last_model, test_loader, 'cuda')
+    evaluate_model(best_model, test_loader, 'cuda')
 
     # Baselines
     # 1. Random
