@@ -1,16 +1,5 @@
-import random as rnd
-import pandas as pd
 import numpy as np
 import torch
-
-
-# baseline: random uniform classifier
-# def random_uniform_classifier(n_instances, cols_name):
-#     random_dataframe = pd.DataFrame(0, index=list(range(n_instances)), columns=cols_name)
-#     for i in range(n_instances):
-#         rnd_col = rnd.choice(cols_name)
-#         random_dataframe.iloc[i, list(cols_name).index(rnd_col)] = 1
-#     return random_dataframe
 
 
 def random_uniform_classifier(test_labels):
@@ -23,18 +12,25 @@ def random_uniform_classifier(test_labels):
     return predictions
 
 
-# baseline: random uniform classifier
-# def majority_classifier(targets):
-#     n_instances = targets.shape[0]
-#     max_idx = np.argmax(targets.apply(np.sum, axis=0))
-#     majority_dataframe = pd.DataFrame(0, index=list(range(n_instances)), columns=targets.columns)
-#     for i in range(n_instances):
-#         majority_dataframe.iloc[i, max_idx] = 1
-#     return majority_dataframe
+def majority_classifier(training_labels, test_labels):
+    training_labels = training_labels.values
+    test_labels = test_labels.values
+    n_instances = test_labels.shape[0]
+    n_classes = test_labels.shape[1]
+
+    predictions = np.zeros((n_instances, n_classes))
+    for i in range(n_classes):
+        if np.sum(training_labels[:, i]) >= len(training_labels) / 2:
+            predictions[:, i] = 1
+    predictions = torch.Tensor(predictions)
+    return predictions
 
 
-def majority_classifier():
-    pass
+def one_baseline(test_labels):
+    test_labels = test_labels.values
+    n_instances = test_labels.shape[0]
+    n_classes = test_labels.shape[1]
 
-
-
+    predictions = np.ones((n_instances, n_classes))
+    predictions = torch.Tensor(predictions)
+    return predictions

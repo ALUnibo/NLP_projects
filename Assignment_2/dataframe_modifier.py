@@ -30,10 +30,6 @@ def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab
     third_level_validation_dataframe = pd.DataFrame()
     third_level_test_dataframe = pd.DataFrame()
 
-    third_level_train_dataframe['Argument ID'] = lab_train_dataframe['Argument ID']
-    third_level_validation_dataframe['Argument ID'] = lab_validation_dataframe['Argument ID']
-    third_level_test_dataframe['Argument ID'] = lab_test_dataframe['Argument ID']
-
     for k, v in third_level_cols.items():
         train_dataframe_reduce = lab_train_dataframe[funct(lab_train_dataframe, v)].apply(np.sum, axis=1) > 0
         third_level_train_dataframe[k] = train_dataframe_reduce.astype(np.float64)
@@ -44,9 +40,5 @@ def create_third_level_labels(lab_train_dataframe, lab_validation_dataframe, lab
 
         test_dataframe_reduce = lab_test_dataframe[funct(lab_test_dataframe, v)].apply(np.sum, axis=1) > 0
         third_level_test_dataframe[k] = test_dataframe_reduce.astype(np.float64)
-
-    third_level_train_dataframe.drop(columns=['Argument ID'], inplace=True)
-    third_level_validation_dataframe.drop(columns=['Argument ID'], inplace=True)
-    third_level_test_dataframe.drop(columns=['Argument ID'], inplace=True)
 
     return third_level_train_dataframe, third_level_validation_dataframe, third_level_test_dataframe

@@ -1,26 +1,26 @@
+import copy
 import torch
-from torcheval.metrics.functional import binary_f1_score
 from torch import nn
-from torch.optim import Adam
-from transformers import get_linear_schedule_with_warmup
+from torch.optim import Adam, AdamW
+from metrics import calculate_f1_score
 
 
 def get_loss_function():
-    return nn.BCEWithLogitsLoss()
+    return nn.BCELoss()
 
 
 def get_optimizer(model):
-    return Adam(model.parameters(), lr=2e-05)
+    return AdamW(model.parameters(), lr=0.01)
 
 
-def get_lr_scheduler(optimizer, num_training_steps):
-    return get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_training_steps)
+def get_lr_scheduler(optimizer):
+    return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2, verbose=True)
 
 
-def train(model, train_dataloader, validation_dataloader, num_epochs):
+def train(model, train_dataloader, validation_dataloader, num_epochs, test_dataloader):
     optimizer = get_optimizer(model)
     loss_function = get_loss_function()
-    lr_scheduler = get_lr_scheduler(optimizer, len(train_dataloader) * num_epochs)
+    lr_scheduler = get_lr_scheduler(optimizer)
 
     # Define your execution device
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -28,7 +28,10 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
     # Convert model parameters and buffers to CPU or Cuda
     model = model.to(device)
 
-    evaluate(model, validation_dataloader, device)
+    evaluate_model(model, validation_dataloader, device)
+
+    best_model = model
+    best_f1 = float('-inf')
 
     for epoch in range(num_epochs):  # loop over the dataset multiple times
         model.train(True)
@@ -46,7 +49,6 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
             loss.backward()
 
             optimizer.step()
-            lr_scheduler.step()
 
             running_loss += loss.item()
             if i % 10 == 0:
@@ -56,59 +58,54 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
             i += 1
 
         # evaluate the model on the validation set
-        score = evaluate(model, validation_dataloader, device)
+        vloss, macro_f1_score = evaluate_model(model, validation_dataloader, device)
+        lr_scheduler.step(vloss)
 
-        # we want to save the model if the accuracy is the best
-        # if accuracy > best_accuracy:
-        #     saveModel()
-        #     best_accuracy = accuracy
+        # TODO: delete this line
+        evaluate_model(model, test_dataloader, device)
 
+        if macro_f1_score > best_f1:
+            print('New best model found! Saving it...')
+            best_f1 = macro_f1_score
+            best_model = copy.deepcopy(model)
 
-def f1_score(predictions, targets, verbose=False):
-    cols = predictions.shape[1]
-    single_class_scores = torch.zeros(cols)
-    for i in range(cols):
-        single_class_scores[i] = binary_f1_score(predictions[:, i], targets[:, i])
-        if verbose:
-            print('F1 score for column %d: %.3f' % (i, single_class_scores[i]))
-    return single_class_scores
+    print('Finished Training')
+    return best_model, model
 
 
-def evaluate(model, validation_dataloader, device):
-    model.eval()
+def evaluate_model(model, loader, device, threshold=0.5):
+    loss, outputs, labels = evaluate(model, loader, device)
+    crisp_predictions = get_predictions(outputs, threshold)
+    macro_f1_score, classes_f1_score = calculate_f1_score(crisp_predictions, labels)
+    print(macro_f1_score, classes_f1_score)
+
+    return loss, macro_f1_score
+
+
+def evaluate(model, dataloader, device, verbose=True):
+    model = model.to(device)
     outputs = torch.Tensor().to(device)
     labels = torch.Tensor().to(device)
+    model.eval()
 
     with torch.no_grad():
-        vloss = 0.0
-        for features_i, labels_i in validation_dataloader:
+        loss = 0.0
+        for features_i, labels_i in dataloader:
             outputs_i = model(features_i)
-            outputs_i = torch.sigmoid(outputs_i)
+            # outputs_i = torch.sigmoid(outputs_i)
 
             outputs = torch.cat((outputs, outputs_i), 0)
             labels = torch.cat((labels, labels_i), 0)
 
-            vloss += get_loss_function()(outputs_i, labels_i).item()
-        vloss /= len(validation_dataloader)
-        print('Validation loss: %.3f' % vloss)
+            loss += get_loss_function()(outputs_i, labels_i).item()
+    loss /= len(dataloader)
+    if verbose:
+        print('Loss: %.3f' % loss)
+    return loss, outputs, labels
 
-    all_thresholds = torch.arange(0.3, 0.8, 0.05)
-    all_f1_scores = torch.zeros(len(all_thresholds))
-    best_f1_score = float('-inf')
 
-    for i, t in enumerate(all_thresholds):
-        crisp = torch.vmap(lambda x: torch.where(x > t, 1.0, 0.0))
-        outputs_i = crisp(outputs)
-        f1_scores_i = f1_score(outputs_i, labels)
-        all_f1_scores[i] = torch.mean(f1_scores_i)
-        if all_f1_scores[i] > best_f1_score:
-            best_f1_score = all_f1_scores[i]
-            single_class_scores = f1_scores_i
-            best_threshold = t
+def get_predictions(outputs, threshold):
+    crisp = torch.vmap(lambda x: torch.where(x > threshold, 1.0, 0.0))
+    outputs = crisp(outputs)
 
-    for i in range(len(single_class_scores)):
-        print('F1 score for column %d: %.3f' % (i, single_class_scores[i]))
-
-    print('F1 score of the network on the validation set: %.3f, with threshold: %.3f' % (best_f1_score, best_threshold))
-
-    return best_f1_score, best_threshold
+    return outputs
