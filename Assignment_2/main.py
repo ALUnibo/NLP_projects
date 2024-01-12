@@ -17,8 +17,8 @@ from plots import generate_summary, generate_precision_recall_curve, generate_co
     generate_f1_scores_table, generate_bar_plot_with_f1_scores, generate_training_history_plots
 
 
-save_best_models = True
-load_best_models = True
+save_best_models = False
+load_best_models = False
 models_load_path = 'best_models.tar'
 models_save_path = 'best_models.tar'
 
@@ -30,9 +30,9 @@ models_dict = [{'name': 'bert-base-uncased', 'head_size': 768},
                {'name': 'roberta-large', 'head_size': 1024}]
 
 initializer_seed = 111
-seeds = [876,
-         555,
-         777
+seeds = [569,
+         106,
+         999
          ]
 
 num_epochs = 10

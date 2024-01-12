@@ -17,7 +17,7 @@ def generate_training_history_plots(histories):
         ax1.set_title('Loss and macro F1 score of model ' + model_type)
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Loss')
-        ax1.set_ylim([0.35, 1])
+        ax1.set_ylim([0.35, 0.9])
         ax1.plot(history['train_loss'], label='Train loss', color='blue')
         ax1.plot(history['val_loss'], label='Validation loss', color='orange')
         ax1.tick_params(axis='y')
@@ -25,7 +25,7 @@ def generate_training_history_plots(histories):
 
         ax2 = ax1.twinx()
         ax2.set_ylabel('Macro F1 score')
-        ax2.set_ylim([0.45, 0.9])
+        ax2.set_ylim([0.45, 0.8])
         ax2.plot(history['val_macro_f1'], label='Validation macro F1 score', color='green')
         ax2.tick_params(axis='y')
         ax2.legend(loc='upper right')
@@ -66,7 +66,7 @@ def generate_summary(crisp_predictions, labels):
     print(summary)
 
 
-def generate_f1_scores_table(outputs_dict, labels, crisp_predictions_dict):
+def generate_f1_scores_table(outputs_dict, labels, crisp_predictions_dict, verbose=True):
     f1_scores = []
     for model_type, predictions in crisp_predictions_dict.items():
         macro_f1_score, class_f1_score = calculate_f1_score(torch.Tensor(predictions), torch.Tensor(labels))
@@ -75,7 +75,10 @@ def generate_f1_scores_table(outputs_dict, labels, crisp_predictions_dict):
         f1_scores.append([model_type, macro_f1_score, *class_f1_score])
 
     f1_scores = pd.DataFrame(f1_scores, columns=['Model', 'Macro F1 score', *labels_columns])
-    print(f1_scores)
+    if verbose:
+        print(f1_scores)
+
+    return f1_scores
 
 
 def generate_precision_recall_curve(outputs_dict, labels, crisp_predictions_dict):

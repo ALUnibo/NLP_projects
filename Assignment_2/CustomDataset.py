@@ -6,8 +6,6 @@ class CustomDataset(Dataset):
     def __init__(self, features, labels, tokenizer):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-        # TODO: add truncation=True ???
-        # features = tokenizer(features['Conclusion'].values.tolist(), padding=True, return_tensors='pt')
         conclusion_features = tokenizer(features['Conclusion'].values.tolist(), padding=True, return_tensors='pt')
         premise_features = tokenizer(features['Premise'].values.tolist(), padding=True, return_tensors='pt')
         stance_features = torch.Tensor(features['Stance']).to(device)
