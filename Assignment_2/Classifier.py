@@ -1,11 +1,12 @@
-from transformers import BertModel, AutoModel, RobertaModel
 from torch import nn
 import torch
+from transformers import AutoModel, BertModel, RobertaModel
 
 
 class ClassifierC(nn.Module):
     def __init__(self, name, head_size):
         super(ClassifierC, self).__init__()
+        self.name_ = 'C'
         self.embedder = AutoModel.from_pretrained(name)
         for param in self.embedder.parameters():
             param.requires_grad = False
@@ -26,6 +27,7 @@ class ClassifierC(nn.Module):
 class ClassifierCP(nn.Module):
     def __init__(self, name, head_size):
         super(ClassifierCP, self).__init__()
+        self.name_ = 'CP'
         self.embedder = AutoModel.from_pretrained(name)
         for param in self.embedder.parameters():
             param.requires_grad = False
@@ -52,6 +54,7 @@ class ClassifierCP(nn.Module):
 class ClassifierCPS(nn.Module):
     def __init__(self, name, head_size):
         super(ClassifierCPS, self).__init__()
+        self.name_ = 'CPS'
         self.embedder = AutoModel.from_pretrained(name)
         for param in self.embedder.parameters():
             param.requires_grad = False
