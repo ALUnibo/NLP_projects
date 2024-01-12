@@ -103,7 +103,7 @@ if __name__ == '__main__':
                         best_models[model_type] = model_trained
 
                 # TODO: delete these two lines
-                print('Test set results:')
+                print('Test set results (TO REMOVE):')
                 evaluate_model(model_trained, test_loader, device)
 
         if save_best_models:
