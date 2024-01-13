@@ -9,7 +9,6 @@ import torch
 from network_trainer import calculate_f1_score
 
 labels_columns = ['Openness to change', 'Self-transcendence', 'Self-enhancement', 'Conservation']
-pd_columns = ['OC', 'ST', 'SE', 'CN']
 
 
 def generate_training_history_plots(histories):
@@ -187,6 +186,7 @@ def generate_correlation_heatmap(train_dataframe, validation_dataframe, test_dat
 
 def show_some_misclassified_examples(test_dataframe, labels, crisp_predictions_dict, verbose=True):
     misclassified_dict = {'C': [], 'CP': [], 'CPS': []}
+    pd_columns = ['Predicted_OC', 'Predicted_ST', 'Predicted_SE', 'Predicted_CN']
     for model_type, predictions in crisp_predictions_dict.items():
         if model_type in ['random', 'majority', 'one']:
             continue
