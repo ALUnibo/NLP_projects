@@ -118,7 +118,7 @@ if __name__ == '__main__':
             }, models_save_path)
             print('Models saved successfully to: ', models_save_path, '\n')
     else:
-        checkpoint = torch.load(models_load_path)
+        checkpoint = torch.load(models_load_path, map_location=device)
         best_models['C'] = ClassifierC(**models_dict[model_id])
         best_models['C'].load_state_dict(checkpoint['modelC_state_dict'])
         best_models['CP'] = ClassifierCP(**models_dict[model_id])
