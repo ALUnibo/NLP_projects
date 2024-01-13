@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import seaborn as sns
 from sklearn.metrics import precision_score, recall_score, precision_recall_curve, confusion_matrix, \
     ConfusionMatrixDisplay
 import torch
@@ -8,6 +9,7 @@ import torch
 from network_trainer import calculate_f1_score
 
 labels_columns = ['Openness to change', 'Self-transcendence', 'Self-enhancement', 'Conservation']
+pd_columns = ['OC', 'ST', 'SE', 'CN']
 
 
 def generate_training_history_plots(histories):
@@ -50,7 +52,7 @@ def generate_training_history_plots(histories):
         plt.show()
 
 
-def generate_summary(crisp_predictions, labels):
+def generate_summary(crisp_predictions, labels, verbose=True):
     precision = []
     recall = []
     f1 = []
@@ -63,7 +65,10 @@ def generate_summary(crisp_predictions, labels):
         assert np.isclose(f1_i, calculate_f1_score(torch.Tensor(crisp_predictions), torch.Tensor(labels))[1][i].item())
 
     summary = pd.DataFrame({'Precision': precision, 'Recall': recall, 'F1': f1}, index=labels_columns)
-    print(summary)
+    if verbose:
+        print(summary)
+
+    return summary
 
 
 def generate_f1_scores_table(outputs_dict, labels, crisp_predictions_dict, verbose=True):
@@ -140,3 +145,73 @@ def generate_bar_plot_with_f1_scores(outputs_dict, labels, crisp_predictions_dic
 
     fig.tight_layout()
     plt.show()
+
+
+def generate_bar_plot(train_dataframe, validation_dataframe, test_dataframe):
+    n_classes = train_dataframe.shape[1]
+    n_train_labels = np.sum(train_dataframe.values, axis=0)
+    n_validation_labels = np.sum(validation_dataframe.values, axis=0)
+    n_test_labels = np.sum(test_dataframe.values, axis=0)
+
+    ind = np.arange(n_classes)
+    width = 0.3
+
+    fig, ax = plt.subplots(figsize=(n_classes * 3, 9))
+    ax.set_title('Distribution imbalance')
+    ax.set_xlabel('Label')
+    ax.set_ylabel('Number of instances')
+    ax.bar(ind - width, n_train_labels, width, label='Train', color='#6aa0f7')
+    ax.bar(ind, n_validation_labels, width, label='Validation', color='#f76a6a')
+    ax.bar(ind + width, n_test_labels, width, label='Test', color='#6af79f')
+    ax.set_xticks(ind)
+    ax.set_xticklabels(labels_columns)
+    ax.legend(loc='upper left')
+
+    fig.tight_layout()
+    plt.show()
+
+
+def generate_correlation_heatmap(train_dataframe, validation_dataframe, test_dataframe):
+    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(15, 5))
+    fig.suptitle('Correlation heatmap')
+    ax[0].set_title('Train')
+    ax[1].set_title('Validation')
+    ax[2].set_title('Test')
+    sns.heatmap(train_dataframe.corr(), annot=True, ax=ax[0])
+    sns.heatmap(validation_dataframe.corr(), annot=True, ax=ax[1])
+    sns.heatmap(test_dataframe.corr(), annot=True, ax=ax[2])
+
+    fig.tight_layout()
+    plt.show()
+
+
+def show_some_misclassified_examples(test_dataframe, labels, crisp_predictions_dict, verbose=True):
+    misclassified_dict = {'C': [], 'CP': [], 'CPS': []}
+    for model_type, predictions in crisp_predictions_dict.items():
+        if model_type in ['random', 'majority', 'one']:
+            continue
+        for i in range(labels.shape[1]):
+            misclassified_dataframe = test_dataframe[
+                np.logical_and(labels[:, i] != predictions[:, i], labels[:, i] == 1)
+            ]
+
+            if len(misclassified_dataframe) == 0:
+                misclassified_dict[model_type].append([])
+                continue
+            elif len(misclassified_dataframe) > 10:
+                misclassified_dataframe = misclassified_dataframe.sample(n=10)
+
+            misclassified_predictions = predictions[misclassified_dataframe.index]
+            misclassified_predictions = pd.DataFrame(misclassified_predictions, columns=pd_columns)
+            misclassified_dataframe = pd.concat(
+                [misclassified_dataframe.reset_index(drop=True), misclassified_predictions.reset_index(drop=True)],
+                axis=1
+            )
+            misclassified_dict[model_type].append(misclassified_dataframe)
+
+            if verbose:
+                print('Model type: ', model_type, ' - Label: ', labels_columns[i])
+                print(misclassified_dataframe)
+                print()
+
+    return misclassified_dict

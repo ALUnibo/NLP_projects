@@ -14,12 +14,13 @@ from CustomDataset import CustomDataset
 from Classifier import ClassifierC, ClassifierCP, ClassifierCPS
 from network_trainer import train, evaluate_model
 from plots import generate_summary, generate_precision_recall_curve, generate_confusion_matrix, \
-    generate_f1_scores_table, generate_bar_plot_with_f1_scores, generate_training_history_plots
+    generate_f1_scores_table, generate_bar_plot_with_f1_scores, generate_training_history_plots, \
+    show_some_misclassified_examples
 
 
 save_best_models = False
 load_best_models = False
-models_load_path = 'best_models.tar'
+models_load_path = 'best_models_test.tar'
 models_save_path = 'best_models.tar'
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -30,9 +31,9 @@ models_dict = [{'name': 'bert-base-uncased', 'head_size': 768},
                {'name': 'roberta-large', 'head_size': 1024}]
 
 initializer_seed = 111
-seeds = [569,
-         106,
-         999
+seeds = [5873,
+         1234,
+         4321
          ]
 
 num_epochs = 10
@@ -168,5 +169,5 @@ if __name__ == '__main__':
     generate_confusion_matrix(outputs_dict, labels, crisp_predictions_dict)
     # Distribution imbalance bar plot with f1 scores
     generate_bar_plot_with_f1_scores(outputs_dict, labels, crisp_predictions_dict)
-
-    # TODO: notebook
+    # Some misclassified examples
+    show_some_misclassified_examples(test_dataframe, labels, crisp_predictions_dict)

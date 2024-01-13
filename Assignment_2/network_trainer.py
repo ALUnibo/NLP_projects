@@ -88,12 +88,13 @@ def train(model, train_dataloader, validation_dataloader, num_epochs):
     return best_model, history
 
 
-def evaluate_model(model, loader, device, threshold=0.5):
-    loss, outputs, labels = evaluate(model, loader, device)
+def evaluate_model(model, loader, device, threshold=0.5, verbose=True):
+    loss, outputs, labels = evaluate(model, loader, device, verbose)
     crisp_predictions = get_predictions(outputs, threshold)
     macro_f1_score, class_f1_score = calculate_f1_score(crisp_predictions, labels)
     macro_f1_score, class_f1_score = macro_f1_score.item(), class_f1_score.cpu().numpy()
-    print('Macro F1 score: %.3f - Class F1 score: %s' % (macro_f1_score, np.array_str(class_f1_score, precision=3)))
+    if verbose:
+        print('Macro F1 score: %.3f - Class F1 score: %s' % (macro_f1_score, np.array_str(class_f1_score, precision=3)))
 
     return loss, macro_f1_score, class_f1_score, outputs.cpu().numpy(), labels.cpu().numpy(), \
         crisp_predictions.cpu().numpy()
