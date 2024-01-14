@@ -31,10 +31,7 @@ models_dict = [{'name': 'bert-base-uncased', 'head_size': 768},
                {'name': 'roberta-large', 'head_size': 1024}]
 
 initializer_seed = 111
-seeds = [5873,
-         1234,
-         4321
-         ]
+seeds = [16, 62, 845]
 
 num_epochs = 10
 
@@ -102,10 +99,6 @@ if __name__ == '__main__':
                     if history['best_val_macro_f1'] > histories[model_type]['best_val_macro_f1']:
                         histories[model_type] = history
                         best_models[model_type] = model_trained
-
-                # TODO: delete these two lines
-                print('Test set results (TO REMOVE):')
-                evaluate_model(model_trained, test_loader, device)
 
         if save_best_models:
             torch.save({
