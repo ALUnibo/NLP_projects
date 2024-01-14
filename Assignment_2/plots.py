@@ -18,7 +18,7 @@ def generate_training_history_plots(histories):
         ax1.set_title('Loss and macro F1 score of model ' + model_type)
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Loss')
-        ax1.set_ylim([0.35, 0.9])
+        ax1.set_ylim([0.4, 0.7])
         ax1.plot(history['train_loss'], label='Train loss', color='blue')
         ax1.plot(history['val_loss'], label='Validation loss', color='orange')
         ax1.tick_params(axis='y')
@@ -26,12 +26,13 @@ def generate_training_history_plots(histories):
 
         ax2 = ax1.twinx()
         ax2.set_ylabel('Macro F1 score')
-        ax2.set_ylim([0.45, 0.8])
+        ax2.set_ylim([0.55, 0.8])
         ax2.plot(history['val_macro_f1'], label='Validation macro F1 score', color='green')
         ax2.tick_params(axis='y')
         ax2.legend(loc='upper right')
 
         fig.tight_layout()
+        plt.savefig('plots/loss_and_macro_f1_score_' + model_type + '.png')
         plt.show()
 
         # Plot class F1 scores and macro F1 score
@@ -48,6 +49,7 @@ def generate_training_history_plots(histories):
         ax.legend(loc='lower left')
 
         fig.tight_layout()
+        plt.savefig('plots/class_f1_scores_and_macro_f1_score_' + model_type + '.png')
         plt.show()
 
 
@@ -97,6 +99,7 @@ def generate_precision_recall_curve(outputs_dict, labels, crisp_predictions_dict
         plt.plot(recall, precision, label=model_type)
 
     plt.legend(loc='upper right')
+    plt.savefig('plots/precision_recall_curve.png')
     plt.show()
 
 
@@ -117,6 +120,7 @@ def generate_confusion_matrix(outputs_dict, labels, crisp_predictions_dict):
             disp.im_.colorbar.remove()
 
     fig.tight_layout(pad=5.0)
+    plt.savefig('plots/confusion_matrix.png')
     plt.show()
 
 
@@ -143,6 +147,7 @@ def generate_bar_plot_with_f1_scores(outputs_dict, labels, crisp_predictions_dic
     ax2.legend(loc='upper left')
 
     fig.tight_layout()
+    plt.savefig('plots/distribution_imbalance_and_f1_score.png')
     plt.show()
 
 
@@ -167,6 +172,7 @@ def generate_bar_plot(train_dataframe, validation_dataframe, test_dataframe):
     ax.legend(loc='upper left')
 
     fig.tight_layout()
+    plt.savefig('plots/distribution_imbalance.png')
     plt.show()
 
 
@@ -181,6 +187,7 @@ def generate_correlation_heatmap(train_dataframe, validation_dataframe, test_dat
     sns.heatmap(test_dataframe.corr(), annot=True, ax=ax[2])
 
     fig.tight_layout()
+    plt.savefig('plots/correlation_heatmap.png')
     plt.show()
 
 
